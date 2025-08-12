@@ -1,0 +1,18 @@
+# Instagram Collection API Dependencies
+
+# Core
+instagrapi>=2.0.0
+python-dotenv>=1.0.0
+
+# Settings management
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# API Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+
+# Additional utilities
+python-multipart>=0.0.6
+
+requests>=2.31.0

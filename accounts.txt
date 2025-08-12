@@ -1,0 +1,7 @@
+# Crie arquivo accounts.txt:
+# conta1:senha1
+# conta2:senha2:http://proxy:port
+# conta3:senha3
+
+# Execute:
+# python account_manager.py from-file
