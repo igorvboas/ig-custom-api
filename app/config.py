@@ -24,7 +24,7 @@ class Settings:
         
         # Pool Settings
         self.max_accounts = int(os.getenv("MAX_ACCOUNTS", "30"))
-        self.account_cooldown_minutes = int(os.getenv("ACCOUNT_COOLDOWN_MINUTES", "120"))
+        self.account_cooldown_minutes = int(os.getenv("ACCOUNT_COOLDOWN_MINUTES", "2")) #segudoem v0: 120
         self.max_daily_operations_per_account = int(os.getenv("MAX_DAILY_OPERATIONS_PER_ACCOUNT", "100"))
         self.health_check_interval_minutes = int(os.getenv("HEALTH_CHECK_INTERVAL_MINUTES", "15"))
         
