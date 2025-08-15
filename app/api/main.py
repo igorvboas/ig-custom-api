@@ -16,6 +16,8 @@ from app.utils.logging_config import setup_logging, get_app_logger
 from app.api.routes import router, init_collection_service, http_exception_handler, general_exception_handler
 from app.api.responses import ErrorResponse
 
+from app.api import onboarding as onboarding_ui  # <-- ADICIONE
+
 # Configurações globais
 settings = Settings()
 setup_logging(settings)
@@ -171,6 +173,9 @@ app.add_middleware(
 
 # Incluir routes
 app.include_router(router, prefix="", tags=["Instagram Collection"])
+
+# >>> ADICIONE O ROUTER DA UI <<<
+app.include_router(onboarding_ui.router)
 
 # Exception handlers
 app.add_exception_handler(HTTPException, http_exception_handler)

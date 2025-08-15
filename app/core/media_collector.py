@@ -17,6 +17,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+from types import SimpleNamespace
 
 from instagrapi import Client
 from instagrapi.types import Story, Media, User
@@ -240,46 +241,39 @@ class MediaCollector:
     
     async def _get_user_info_safe(self, client: Client, username: str) -> Optional[User]:
         """
-        Obtém informações do usuário de forma segura usando ThreadPoolExecutor
-        
-        Args:
-            client: Cliente Instagram
-            username: Nome de usuário
-            
-        Returns:
-            User object ou None se não encontrado
+        Obtém informações do usuário de forma segura.
+        Se a validação do Pydantic do instagrapi falhar, faz fallback para apenas o pk (user_id).
         """
         def _get_user_sync():
             try:
-                # Tentar método principal
+                # 1) Tenta via método padrão (retorna instagrapi.types.User)
                 user = client.user_info_by_username(username)
                 return user, None
-            except Exception as e:
-                logger.warning(f"Método principal falhou, tentando alternativo: {e}")
+            except Exception as e1:
+                logger.warning(f"user_info_by_username falhou, tentando fallback pelo user_id: {e1}")
                 try:
+                    # 2) Fallback: pega o ID sem passar por pydantic User
                     user_id = client.user_id_from_username(username)
-                    user = client.user_info(user_id)
-                    return user, None
+                    # Retornamos um objeto leve com apenas .pk
+                    return SimpleNamespace(pk=int(user_id)), None
                 except Exception as e2:
-                    logger.error(f"Ambos os métodos falharam: {e2}")
-                    return None, str(e2)
-        
+                    return None, e2
+
+        # Executa de forma síncrona em thread separada se necessário
         try:
-            await self._random_delay(0.5, 1.5)
-            user, error = await asyncio.get_event_loop().run_in_executor(
-                self.executor, _get_user_sync
-            )
-            
-            if error and "not found" in error.lower():
-                raise UserNotFound(error)
-            elif error:
-                raise Exception(error)
-                
+            user, err = _get_user_sync()
+            if err:
+                logger.error(f"Falha ao obter user info para @{username}: {err}")
+                return None
+            # Sanidade mínima: garantir que temos .pk
+            if getattr(user, "pk", None) is None:
+                logger.error(f"User info sem pk para @{username}")
+                return None
             return user
-            
         except Exception as e:
-            logger.error(f"Erro ao obter informações do usuário {username}: {e}")
-            raise
+            logger.error(f"Erro inesperado ao obter user info para @{username}: {e}")
+            return None
+
     
     async def _collect_stories_safe(self, client: Client, user_id: int) -> List[Story]:
         """

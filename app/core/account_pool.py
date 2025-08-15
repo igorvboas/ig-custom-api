@@ -399,6 +399,45 @@ class AccountPool:
         except Exception as e:
             logger.error(f"Erro ao salvar pool: {e}")
     
+    def register_authenticated_account(self, username: str, password: str, proxy: Optional[str], client: Client) -> bool:
+        """
+        Registra a conta no pool assumindo que o 'client' já está autenticado.
+        Persiste a sessão e atualiza o estado interno.
+        """
+        try:
+            if any(acc.username == username for acc in self.accounts):
+                logger.warning(f"Conta {username} já existe no pool")
+                return True
+
+            # criar estrutura InstagramAccount (você já tem o model/import)
+            account = InstagramAccount(
+                username=username,
+                password=password,
+                proxy=proxy,
+                status=AccountStatus.ACTIVE,
+                last_used=None,
+                operations_today=0,
+                health_score=100.0,
+            )
+
+            # garantir diretórios / sessão
+            sessions_dir = Path(self.settings.session_dir)
+            sessions_dir.mkdir(parents=True, exist_ok=True)
+            account.session_file = str(sessions_dir / f"{username}.json")
+
+            # persistir settings do client atual
+            try:
+                client.dump_settings(account.session_file)
+            except Exception as e:
+                logger.error(f"Falha ao salvar sessão para {username}: {e}")
+
+            self.accounts.append(account)
+            logger.info(f"✅ Conta {username} registrada no pool (cliente já autenticado)")
+            return True
+        except Exception as e:
+            logger.error(f"Erro ao registrar conta autenticada {username}: {e}")
+            return False
+        
     def remove_account(self, username: str) -> bool:
         """
         Remove conta do pool
